@@ -1,0 +1,33 @@
+# .github/workflows/publish.yml
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*" # tag pattern on pub.dev: 'v{{version}'
+
+# Publish using custom workflow
+jobs:
+  publish:
+    permissions:
+      id-token: write # Required for authentication using OIDC
+    runs-on: ubuntu-latest
+    steps:
+      # checkout project
+      - uses: actions/checkout@v3
+      # setup dart
+      - uses: dart-lang/setup-dart@v1
+        with:
+          channel: stable
+      # install dependencies
+      - name: Install dependencies
+        run: dart pub get
+      # run tests
+      - name: Run tests
+        run: dart test
+      # build package
+      - name: Build
+        run: dart pub publish --dry-run
+      # publish package
+      - name: Publish
+        run: dart pub publish --force
