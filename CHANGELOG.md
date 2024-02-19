@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.3
+
+### Fixed
+
+- automated workflow for publishing to pub.dev with github actions not working properly.
+
 ## 0.0.2
 
 ### Added
