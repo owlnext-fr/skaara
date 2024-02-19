@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.4
+
+### Added
+
+- Hive database support.
+- Rework of service factories.
+
 ## 0.0.3
 
 ### Fixed

@@ -1,6 +1,6 @@
 name: skaara
 description: "A flutter local proxy for offline HTTP operations & caching"
-version: 0.0.3
+version: 0.0.4
 homepage: https://github.com/owlnext-fr/skaara
 repository: https://github.com/owlnext-fr/skaara
 
