@@ -9,12 +9,14 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
+  dio: ^5.4.1
   flutter:
     sdk: flutter
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   logger: ^2.0.2+1
   path_provider: ^2.1.2
+  universal_io: ^2.2.2
 
 dev_dependencies:
   flutter_test:

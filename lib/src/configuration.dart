@@ -3,6 +3,7 @@ import 'package:logger/logger.dart';
 class Configuration {
   // #region dynamic configuration
   bool enableLogging = false;
+  String baseUrl = '';
   // #endregion
 
   // #region static configuration
@@ -12,6 +13,7 @@ class Configuration {
   // #endregion
 
   Configuration({
+    required this.baseUrl,
     this.enableLogging = false,
   });
 }

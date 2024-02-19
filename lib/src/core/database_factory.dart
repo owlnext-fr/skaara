@@ -7,7 +7,7 @@ import 'package:skaara/src/core/impl/service_factory_interface.dart';
 import 'package:skaara/src/database.dart';
 
 class DatabaseFactory implements ServiceFactoryInterface<Database> {
-  static String _db_dir = '/assets/skaara_db';
+  static const String dbDir = '/assets/skaara_db';
 
   @override
   Future<Database> getInstance(
@@ -28,7 +28,7 @@ class DatabaseFactory implements ServiceFactoryInterface<Database> {
   }
 
   Future<String> generateDatabaseDirectory() async {
-    var path = _db_dir;
+    var path = dbDir;
 
     if (false == kIsWeb) {
       var appDocDir = await getApplicationDocumentsDirectory();
