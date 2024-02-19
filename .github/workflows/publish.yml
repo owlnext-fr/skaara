@@ -26,10 +26,10 @@ jobs:
         run: flutter pub get
       # run tests
       - name: Run tests
-        run: dart test
+        run: flutter test
       # build package
       - name: Build
-        run: dart pub publish --dry-run
+        run: flutter pub publish --dry-run
       # publish package
       - name: Publish
-        run: dart pub publish --force
+        run: flutter pub publish --force
