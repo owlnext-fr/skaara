@@ -7,6 +7,7 @@ import 'package:skaara/src/core/database_factory.dart';
 import 'package:skaara/src/core/http_client_factory.dart';
 import 'package:skaara/src/core/logger_factory.dart';
 import 'package:skaara/src/database.dart';
+import 'package:skaara/src/enums/methods.dart';
 import 'package:skaara/src/enums/request_type.dart';
 import 'package:skaara/src/http_client.dart';
 import 'package:skaara/src/models/request_payload.dart';
@@ -93,61 +94,81 @@ class Skaara {
     Options options = Options();
 
     // preparing http basics
-    options.method = requestPayload.method.toString();
+    options.method = requestPayload.method.toShortString();
     String url = _configuration.baseUrl + requestPayload.path;
 
     // preparing data
     dynamic finalData;
 
-    switch (requestPayload.requestType) {
-      case RequestType.JSON_LD:
-      case RequestType.JSON:
-        finalData = jsonEncode(requestPayload.data);
-        break;
-      case RequestType.MULTIPART:
-        Map<String, dynamic> data = requestPayload.data;
-        List<FilePart> fileParts = [];
+    if (null != requestPayload.data) {
+      switch (requestPayload.requestType) {
+        case RequestType.JSON_LD:
+        case RequestType.JSON:
+          finalData = jsonEncode(requestPayload.data);
+          break;
+        case RequestType.MULTIPART:
+          Map<String, dynamic> data = requestPayload.data;
+          List<FilePart> fileParts = [];
 
-        data.forEach((key, value) {
-          if (value is FilePart) {
-            fileParts.add(value);
-            data.remove(key);
-          }
-        });
-
-        int fileNumbers = fileParts.length;
-
-        if (fileNumbers > 0) {
-          if (fileNumbers == 1) {
-            var file = MultipartFile.fromFile(fileParts[0].path,
-                filename: fileParts[0].name);
-
-            data.addAll({
-              "file": file,
-            });
-          } else {
-            List<MultipartFile> files = [];
-            for (var filePart in fileParts) {
-              var file = await MultipartFile.fromFile(filePart.path,
-                  filename: filePart.name);
-              files.add(file);
+          data.forEach((key, value) {
+            if (value is FilePart) {
+              fileParts.add(value);
+              data.remove(key);
             }
+          });
 
-            data.addAll({
-              "files": files,
-            });
+          int fileNumbers = fileParts.length;
+
+          if (fileNumbers > 0) {
+            if (fileNumbers == 1) {
+              var file = MultipartFile.fromFile(fileParts[0].path,
+                  filename: fileParts[0].name);
+
+              data.addAll({
+                "file": file,
+              });
+            } else {
+              List<MultipartFile> files = [];
+              for (var filePart in fileParts) {
+                var file = await MultipartFile.fromFile(filePart.path,
+                    filename: filePart.name);
+                files.add(file);
+              }
+
+              data.addAll({
+                "files": files,
+              });
+            }
           }
-        }
 
-        break;
-      default:
-        finalData = requestPayload.data;
+          break;
+        default:
+          finalData = requestPayload.data;
+      }
     }
 
     // preparing headers
     Map<String, dynamic> headers = requestPayload.headers;
 
-    return await _httpClient.instance
-        .request(url, queryParameters: requestPayload.query, options: options);
+    options.validateStatus = (status) {
+      return true;
+    };
+
+    _logger.i('URL: $url');
+    _logger.i('Method: ${options.method}');
+    _logger.i('Query: ${requestPayload.query}');
+    _logger.i('Data: $finalData');
+    _logger.i('Headers: $headers');
+    _logger.i('RequestType: ${requestPayload.requestType}');
+    _logger.i('ResponseType: ${requestPayload.responseType}');
+
+    var response = await _httpClient.instance.request(url,
+        data: finalData,
+        queryParameters: requestPayload.query,
+        options: options);
+
+    _logger.i('Response: ${response.data}');
+
+    return response;
   }
 }

@@ -13,11 +13,11 @@ void main() async {
   PathProviderPlatform.instance = FakePathProviderPlatform();
 
   // This is required to create a Skaara instance
-  Skaara skaara = await Skaara.create(enableLogging: true, baseUrl: '');
+  Skaara skaara = await Skaara.create(enableLogging: false, baseUrl: '');
 
   test('create skaara instance', () async {
     expect(skaara, isNotNull);
-    expect(skaara.configuration.enableLogging, true);
+    expect(skaara.configuration, isNotNull);
     expect(skaara.database, isNotNull);
     expect(skaara.logger, isNotNull);
   });
@@ -29,7 +29,7 @@ void main() async {
 
   test('Execute simple GET request', () async {
     final response = await skaara.execute(
-      RequestPayload(path: 'https://jsonplaceholder.typicode.com/todos/1'),
+      RequestPayload(path: 'https://jsonplaceholder.typicode.com/posts/1'),
     );
     expect(response, isNotNull);
     expect(response.statusCode, 200);

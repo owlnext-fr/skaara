@@ -7,7 +7,7 @@ class RequestPayload {
 
   Methods method = Methods.GET;
   Map<String, dynamic> query = {};
-  dynamic data = {};
+  dynamic data;
   Map<String, dynamic> headers = {};
   RequestType requestType = RequestType.JSON;
   ResponseType responseType = ResponseType.JSON;
@@ -16,7 +16,7 @@ class RequestPayload {
     required this.path,
     this.method = Methods.GET,
     this.query = const {},
-    this.data = const {},
+    this.data,
     this.headers = const {},
     this.requestType = RequestType.JSON,
     this.responseType = ResponseType.JSON,

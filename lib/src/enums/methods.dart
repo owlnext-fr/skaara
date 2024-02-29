@@ -11,3 +11,9 @@ enum Methods {
   CONNECT,
   TRACE,
 }
+
+extension MethodsExtension on Methods {
+  String toShortString() {
+    return toString().split('.').last;
+  }
+}
