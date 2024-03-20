@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.6
+
+### Added
+
+- Custom Exception mapper for specific HTTP status codes.
+- Custom formatter for error messages.
+
 ## 0.0.5
 
 ### Added

@@ -9,9 +9,10 @@ import 'package:skaara/src/core/logger_factory.dart';
 import 'package:skaara/src/database.dart';
 import 'package:skaara/src/enums/methods.dart';
 import 'package:skaara/src/enums/request_type.dart';
-import 'package:skaara/src/exceptions/skaara_http_exception.dart';
+import 'package:skaara/src/exceptions/exception_mapper.dart';
 import 'package:skaara/src/http_client.dart';
 import 'package:skaara/src/models/request_payload.dart';
+import 'package:skaara/src/utils/exception_message_formatter.dart';
 import 'package:skaara/src/utils/file_part.dart';
 
 class Skaara {
@@ -20,8 +21,9 @@ class Skaara {
   late Configuration _configuration;
   late Database _database;
   late Logger _logger;
-  // ignore: unused_field
   late HttpClient _httpClient;
+  late ExceptionMapper _exceptionMapper;
+  late ExceptionMessageFormatter _exceptionMessageFormatter;
   // #endregion
 
   // #region constructor
@@ -30,11 +32,15 @@ class Skaara {
     required Database database,
     required Logger logger,
     required HttpClient httpClient,
+    required ExceptionMapper exceptionMapper,
+    required ExceptionMessageFormatter exceptionMessageFormatter,
   }) {
     _configuration = configuration;
     _database = database;
     _logger = logger;
     _httpClient = httpClient;
+    _exceptionMapper = exceptionMapper;
+    _exceptionMessageFormatter = exceptionMessageFormatter;
   }
   // #endregion
 
@@ -42,6 +48,9 @@ class Skaara {
   static Future<Skaara> create({
     required String baseUrl,
     bool enableLogging = false,
+    List<ExceptionMap> exceptionMap = const [],
+    ExceptionMessageFormatter exceptionMessageFormatter =
+        const ExceptionMessageFormatter(),
   }) async {
     if (_instance != null) {
       _instance!.logger.i('Skaara instance already created !');
@@ -68,6 +77,11 @@ class Skaara {
 
     logger.i('HttpClient initialized !');
 
+    final exceptionMapper = ExceptionMapper();
+    for (var map in exceptionMap) {
+      exceptionMapper.add(map.voterFunction, map.factoryFunction);
+    }
+
     // create instance
     logger.i('Creating Skaara instance...');
     Skaara instance = Skaara._create(
@@ -75,6 +89,8 @@ class Skaara {
       database: database,
       logger: logger,
       httpClient: httpClient,
+      exceptionMapper: exceptionMapper,
+      exceptionMessageFormatter: exceptionMessageFormatter,
     );
 
     _instance = instance;
@@ -178,11 +194,17 @@ class Skaara {
     _logger.i('Response: ${response.data}');
 
     if (response.statusCode! >= 400) {
-      SkaaraHttpException ex = SkaaraHttpException(
-          url: url,
-          method: requestPayload.method,
-          statusCode: response.statusCode ?? 0,
-          statusMessage: response.data);
+      String message = _exceptionMessageFormatter.format(
+        method: requestPayload.method,
+        url: url,
+        statusCode: response.statusCode ?? 0,
+        message: response.data.toString(),
+      );
+
+      Exception ex = _exceptionMapper.getException(
+        response.statusCode ?? 0,
+        message,
+      );
 
       _logger.e(ex);
 

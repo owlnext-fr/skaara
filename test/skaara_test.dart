@@ -2,9 +2,21 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skaara/skaara.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-import 'package:skaara/src/exceptions/skaara_http_exception.dart';
+import 'package:skaara/src/exceptions/exception_mapper.dart';
 
 import 'includes/fake_path_provider_platform.dart';
+
+// helper classes
+class TestException implements Exception {
+  final String message;
+
+  TestException(this.message);
+
+  @override
+  String toString() {
+    return message;
+  }
+}
 
 void main() async {
   // This is required to initialize the PathProviderPlatform
@@ -14,7 +26,13 @@ void main() async {
   PathProviderPlatform.instance = FakePathProviderPlatform();
 
   // This is required to create a Skaara instance
-  Skaara skaara = await Skaara.create(enableLogging: false, baseUrl: '');
+  Skaara skaara =
+      await Skaara.create(enableLogging: false, baseUrl: '', exceptionMap: [
+    ExceptionMap(
+      voterFunction: (int statusCode) => statusCode == 404,
+      factoryFunction: (String message) => TestException(message),
+    ),
+  ]);
 
   test('create skaara instance', () async {
     expect(skaara, isNotNull);
@@ -154,7 +172,17 @@ void main() async {
           path: 'https://jsonplaceholder.typicode.com/posts/404'));
       fail("A SkaaraHttpException should have been thrown");
     } catch (e) {
-      expect(e, isInstanceOf<SkaaraHttpException>());
+      expect(e, isInstanceOf<Exception>());
+    }
+  });
+
+  test('Handle mapped exception on 404', () async {
+    try {
+      await skaara.execute(RequestPayload(
+          path: 'https://jsonplaceholder.typicode.com/posts/404'));
+      fail("A SkaaraHttpException should have been thrown");
+    } catch (e) {
+      expect(e, isInstanceOf<TestException>());
     }
   });
 }
