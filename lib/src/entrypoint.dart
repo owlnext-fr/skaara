@@ -9,6 +9,7 @@ import 'package:skaara/src/core/logger_factory.dart';
 import 'package:skaara/src/database.dart';
 import 'package:skaara/src/enums/methods.dart';
 import 'package:skaara/src/enums/request_type.dart';
+import 'package:skaara/src/exceptions/skaara_http_exception.dart';
 import 'package:skaara/src/http_client.dart';
 import 'package:skaara/src/models/request_payload.dart';
 import 'package:skaara/src/utils/file_part.dart';
@@ -107,40 +108,42 @@ class Skaara {
           finalData = jsonEncode(requestPayload.data);
           break;
         case RequestType.MULTIPART:
-          Map<String, dynamic> data = requestPayload.data;
+          finalData = requestPayload.data;
           List<FilePart> fileParts = [];
+          List<MultipartFile> finalFileParts = [];
+          List<String> keysToDelete = [];
 
-          data.forEach((key, value) {
-            if (value is FilePart) {
-              fileParts.add(value);
-              data.remove(key);
-            }
-          });
-
-          int fileNumbers = fileParts.length;
-
-          if (fileNumbers > 0) {
-            if (fileNumbers == 1) {
-              var file = MultipartFile.fromFile(fileParts[0].path,
-                  filename: fileParts[0].name);
-
-              data.addAll({
-                "file": file,
-              });
-            } else {
-              List<MultipartFile> files = [];
-              for (var filePart in fileParts) {
-                var file = await MultipartFile.fromFile(filePart.path,
-                    filename: filePart.name);
-                files.add(file);
-              }
-
-              data.addAll({
-                "files": files,
-              });
+          for (var key in finalData.keys) {
+            if (finalData[key] is FilePart) {
+              fileParts.add(finalData[key]);
+              keysToDelete.add(key);
             }
           }
 
+          for (var key in keysToDelete) {
+            finalData.remove(key);
+          }
+
+          for (var filePart in fileParts) {
+            finalFileParts.add(await MultipartFile.fromFile(filePart.path,
+                filename: filePart.name));
+          }
+
+          if (finalFileParts.isNotEmpty) {
+            if (finalFileParts.length > 1) {
+              finalData['files'] = finalFileParts;
+            } else {
+              finalData['file'] = finalFileParts.first;
+            }
+          }
+
+          finalData = FormData.fromMap(finalData);
+
+          break;
+
+        case RequestType.URL_ENCODED:
+          options.contentType = Headers.formUrlEncodedContentType;
+          finalData = requestPayload.data;
           break;
         default:
           finalData = requestPayload.data;
@@ -154,10 +157,14 @@ class Skaara {
       return true;
     };
 
+    String? displayableData = finalData is FormData
+        ? [finalData.fields.toString(), finalData.files.toString()].toString()
+        : finalData.toString();
+
     _logger.i('URL: $url');
     _logger.i('Method: ${options.method}');
     _logger.i('Query: ${requestPayload.query}');
-    _logger.i('Data: $finalData');
+    _logger.i('Data: $displayableData');
     _logger.i('Headers: $headers');
     _logger.i('RequestType: ${requestPayload.requestType}');
     _logger.i('ResponseType: ${requestPayload.responseType}');
@@ -167,7 +174,20 @@ class Skaara {
         queryParameters: requestPayload.query,
         options: options);
 
+    _logger.i('Status: ${response.statusCode}');
     _logger.i('Response: ${response.data}');
+
+    if (response.statusCode! >= 400) {
+      SkaaraHttpException ex = SkaaraHttpException(
+          url: url,
+          method: requestPayload.method,
+          statusCode: response.statusCode ?? 0,
+          statusMessage: response.data);
+
+      _logger.e(ex);
+
+      throw ex;
+    }
 
     return response;
   }

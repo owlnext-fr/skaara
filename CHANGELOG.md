@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.5
+
+### Added
+
+- Full unit tests for classic HTTP request (CRUD) operations.
+
 ## 0.0.4
 
 ### Added
